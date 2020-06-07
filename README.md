@@ -27,7 +27,7 @@ This controller implements the regular robot interface for ROS + custom services
 
 Start the controller hereunder on the Raspberry Pi. Then, our your workstation, try the following:
 
-1. Set the robot in compliance mode:
+### 1. Set the robot in compliance mode:
 ```bash
 rosservice call /set_compliant "data: true" 
 
@@ -36,11 +36,40 @@ rosservice call /set_compliant "data: true"
 #   message: "Robot compliance has been enabled"
 ```
 
-2. Plot the joint positions:
+### 2. Plot the joint positions:
 ```bash
 rosrun rqt_plot rqt_plot /joint_states/position[0] /joint_states/position[1] /joint_states/position[2] /joint_states/position[3] /joint_states/position[4] /joint_states/position[5]
 ```
 You'll see a graph updated in real time. Manually move motors with your hands to see their evolution in real time. 
+
+### 3. Trajectory record and playback feature
+```bash
+import rospy
+from poppy_ros_control.recorder import Recorder
+
+rospy.init_node("trajectory_recorder")
+r = Recorder()
+r.start_recording()
+
+# Move your robot with your hands to record its trajectory
+
+r.stop_and_save("my_motion_name")
+```
+
+Trajectories are stored in JSON files in the `poppy_controllers/data` directory. Later, you can replay them this way:
+```bash
+import rospy
+from poppy_ros_control.recorder import Player
+
+rospy.init_node("trajectory_player")
+p = Player()
+
+my_motion = p.load("my_motion_name")
+
+# load() returns a moveit_msgs/RobotTrajectory object that you can pass to the robot commander:
+
+robot.execute(my_motion)
+```
 
 ## Compatible robots and accessories
 
