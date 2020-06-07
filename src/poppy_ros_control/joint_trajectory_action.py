@@ -40,6 +40,7 @@ from control_msgs.msg import FollowJointTrajectoryFeedback
 from control_msgs.msg import FollowJointTrajectoryResult
 from trajectory_msgs.msg import JointTrajectoryPoint
 from std_msgs.msg import UInt16
+from std_srvs.srv import SetBool, SetBoolResponse
 from sensor_msgs.msg import JointState
 from poppy_ergo_jr import PoppyErgoJr
 from rospy import ROSException
@@ -113,6 +114,9 @@ class JointTrajectoryActionServer(object):
             m.moving_speed = 250
         self._robot.compliant = False
 
+        # Start services
+        self._compilant_srv = rospy.Service('set_compliant', SetBool, self._cb_set_compliant)
+
         # Start the action server
         rospy.sleep(0.5)
         self._server.start()
@@ -132,6 +136,11 @@ class JointTrajectoryActionServer(object):
     def clean_shutdown(self):
         self._robot.compliant = True   # Stop the robot
         rospy.sleep(0.5)
+
+    def _cb_set_compliant(self, request):
+        self._robot.compliant = request.data
+        msg = "Robot compliance has been {}".format('enabled' if request.data else 'disabled')
+        return SetBoolResponse(success=True, message=msg)
 
     def _get_trajectory_parameters(self, joint_names, goal):
         # For each input trajectory, if path, goal, or goal_time tolerances
@@ -210,6 +219,9 @@ class JointTrajectoryActionServer(object):
         for i, m in enumerate(joint_names):
             if m not in self._motors:
                 rospy.logerr("Point is invalid: joint {} not found".format(m))
+                return False
+            if self._robot.compliant:
+                rospy.logerr("Robot is compliant, the trajectory cannot execute")
                 return False
             dxl = getattr(self._robot, m)
             dxl.goal_position = float(point.positions[i])/DEG_TO_RAD
