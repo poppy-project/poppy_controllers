@@ -44,7 +44,7 @@ rosrun rqt_plot rqt_plot /joint_states/position[0] /joint_states/position[1] /jo
 You'll see a graph updated in real time. Manually move motors with your hands to see their evolution in real time. 
 
 ### 3. Trajectory record and playback feature
-```bash
+```python
 import rospy
 from poppy_ros_control.recorder import Recorder
 
@@ -58,7 +58,7 @@ r.stop_and_save("my_motion_name")
 ```
 
 Trajectories are stored in JSON files in the `poppy_controllers/data` directory. Later, you can replay them this way:
-```bash
+```python
 import rospy
 from poppy_ros_control.recorder import Player
 
