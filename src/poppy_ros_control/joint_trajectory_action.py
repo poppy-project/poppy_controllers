@@ -95,11 +95,11 @@ class JointTrajectoryActionServer(object):
         self._cv_bridge = None
         try:
             self._robot = PoppyErgoJr()
-        except ValueError:
+        except OSError:
             rospy.logwarn("Can't connect to the robot, let's disable the camera...")
             try:
                 self._robot = PoppyErgoJr(camera='dummy')
-            except ValueError as e:
+            except OSError as e:
                 rospy.logwarn("Connection to the robot can't be established:" + str(e))
                 self._robot = None
                 return
