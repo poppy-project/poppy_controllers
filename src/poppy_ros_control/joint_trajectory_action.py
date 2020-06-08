@@ -40,6 +40,7 @@ from control_msgs.msg import FollowJointTrajectoryFeedback
 from control_msgs.msg import FollowJointTrajectoryResult
 from trajectory_msgs.msg import JointTrajectoryPoint
 from std_msgs.msg import UInt16
+from poppy_controllers.srv import GetImage, GetImageResponse
 from std_srvs.srv import SetBool, SetBoolResponse
 from sensor_msgs.msg import JointState
 from poppy_ergo_jr import PoppyErgoJr
@@ -91,10 +92,25 @@ class JointTrajectoryActionServer(object):
         self._js_publisher = rospy.Publisher('joint_states', JointState, queue_size=10)
 
         # Actual robot control
-        self._robot = PoppyErgoJr(camera='dummy')
+        self._cv_bridge = None
+        try:
+            self._robot = PoppyErgoJr()
+        except ValueError:
+            rospy.logwarn("Can't connect to the robot, let's disable the camera...")
+            try:
+                self._robot = PoppyErgoJr(camera='dummy')
+            except ValueError as e:
+                rospy.logwarn("Connection to the robot can't be established:" + str(e))
+                self._robot = None
+                return
+            else:
+                rospy.logwarn("Connection successful but camera was disabled")
+        else:
+            from cv_bridge import CvBridge
+            self._cv_bridge = CvBridge()
+
         self._motors = [m.name for m in self._robot.motors]
         self._js.name = deepcopy(self._motors)
-        rospy.logerr("No camera at the moment")
 
         # Action Feedback/Result
         self._fdbk = FollowJointTrajectoryFeedback()
@@ -115,7 +131,8 @@ class JointTrajectoryActionServer(object):
         self._robot.compliant = False
 
         # Start services
-        self._compilant_srv = rospy.Service('set_compliant', SetBool, self._cb_set_compliant)
+        self._compliant_srv = rospy.Service('set_compliant', SetBool, self._cb_set_compliant)
+        self._image_srv = rospy.Service('get_image', GetImage, self._cb_get_image)
 
         # Start the action server
         rospy.sleep(0.5)
@@ -136,6 +153,13 @@ class JointTrajectoryActionServer(object):
     def clean_shutdown(self):
         self._robot.compliant = True   # Stop the robot
         rospy.sleep(0.5)
+
+    def _cb_get_image(self, request):
+        if self._cv_bridge is None:
+            return GetImageResponse()
+        else:
+            image = self._robot.camera.frame
+            return GetImageResponse(self._cv_bridge.cv2_to_imgmsg(image))
 
     def _cb_set_compliant(self, request):
         self._robot.compliant = request.data

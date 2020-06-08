@@ -9,10 +9,21 @@ find_package(catkin REQUIRED
   std_msgs
   control_msgs
   trajectory_msgs
+  message_generation
   dynamic_reconfigure
 )
 
 catkin_python_setup()
+
+add_service_files(
+  FILES
+  GetImage.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  sensor_msgs
+)
 
 generate_dynamic_reconfigure_options(
   cfg/JointTrajectoryActionServer.cfg
@@ -27,6 +38,7 @@ catkin_package(
   control_msgs
   trajectory_msgs
   message_runtime
+  message_generation
   dynamic_reconfigure
 )
 
