@@ -103,6 +103,13 @@ image = bridge.imgmsg_to_cv2(response.image)
 cv2.imshow("Poppy camera", image)
 cv2.waitKey(200)
 ```
+## Troubleshooting
+#### `Invalid Trajectory: start point deviates from current robot state more than 0.2`
+You're probably trying to replay a trajectory while your robot didn't reach the starting point first. Make sure you reach it with `set_joint_value_target`.
+
+#### `ABORTED: Solution found but controller failed during execution`
+Is your robot compliance disabled? No trajectory can be executed with compliance.
+
 ## Compatible robots and accessories
 
 Although this ROS package can evolute as a ROS overlay to [`pypot`](https://github.com/poppy-project/pypot) and thus take control over all Poppy robots: Ergo jr, Torso, Humanoid... the current development status currently only supports Poppy Ergo Jr mounted with the Gripper tool. 
