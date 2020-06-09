@@ -376,7 +376,7 @@ class JointTrajectoryActionServer(object):
                 t = 1.0
             elif idx >= 0:
                 cmd_time = (now_from_start - pnt_times[idx-1])
-                t = cmd_time / (pnt_times[idx] - pnt_times[idx-1])
+                t = cmd_time / max(0.001, pnt_times[idx] - pnt_times[idx-1])
             else:
                 cmd_time = 0
                 t = 0
