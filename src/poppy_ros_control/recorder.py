@@ -5,6 +5,7 @@ from sensor_msgs.msg import JointState
 from trajectory_msgs.msg import JointTrajectoryPoint, JointTrajectory
 from moveit_msgs.msg import RobotTrajectory
 import json, rospy
+from copy import deepcopy
 
 def to_dict(points):
     """
@@ -34,7 +35,7 @@ def from_dict(trajectory):
     for point in trajectory["points"]:
         jtp.positions = point["positions"]
         jtp.time_from_start = rospy.Duration(point["time"])
-        jt.points.append(jtp)
+        jt.points.append(deepcopy(jtp))
     return jt
 
 class RecorderBase(object):
