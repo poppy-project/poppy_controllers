@@ -44,6 +44,13 @@ rosrun rqt_plot rqt_plot /joint_states/position[0] /joint_states/position[1] /jo
 You'll see a graph updated in real time. Manually move motors with your hands to see their evolution in real time. 
 
 ### 3. Trajectory record and playback feature
+To record a trajectory, it is handy to enable compliance and manipulate the robot with your hands: 
+```bash
+rosservice call /set_compliant "data: true" 
+```
+However, it is also totally fine to record a trajectory played by MoveIt or any other way.
+
+Then, open a Jupyter notebook or an `ipython` interactive interpreter and use the following functions to record, for instance, a 5sec trajectory:
 ```python
 import rospy
 from poppy_ros_control.recorder import Recorder
@@ -52,24 +59,35 @@ rospy.init_node("trajectory_recorder")
 r = Recorder()
 r.start_recording()
 
-# Move your robot with your hands to record its trajectory
+# Move your robot with your hands in compliant mode to record its trajectory
+rospy.sleep(5)
 
 r.stop_and_save("my_motion_name")
 ```
 
-Trajectories are stored in JSON files in the `poppy_controllers/data` directory. Later, you can replay them this way:
+Trajectories are stored in JSON files in the `poppy_controllers/data` directory.
+
+Later, you can replay them this way:
+
+
 ```python
 import rospy
 from poppy_ros_control.recorder import Player
+from moveit_commander.move_group import MoveGroupCommander
 
 rospy.init_node("trajectory_player")
-p = Player()
+commander = MoveGroupCommander("arm_and_finger")
+player = Player()
 
-my_motion = p.load("my_motion_name")
+# This returns a moveit_msgs/RobotTrajectory object representing the recorded trajectory
+my_motion = player.load("my_motion_name")
 
-# load() returns a moveit_msgs/RobotTrajectory object that you can pass to the robot commander:
+# Go to the start position before replaying the motion
+commander.set_joint_value_target(my_motion.joint_trajectory.points[0].positions)
+commander.go()
 
-robot.execute(my_motion)
+# Replay the exact same motion
+commander.execute(my_motion)
 ```
 
 ### 4. Grab an image
