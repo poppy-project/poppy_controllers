@@ -110,6 +110,13 @@ You're probably trying to replay a trajectory while your robot didn't reach the 
 #### `ABORTED: Solution found but controller failed during execution`
 Is your robot compliance disabled? No trajectory can be executed with compliance.
 
+#### Robot makes abrupt trajectories
+* If you are replaying a recorded trajectory, make you you first join its initial point before starting replay: use `set_joint_value_target` first before `execute`
+* Poppy Ergo Jr's motors have a range of [-170°, +170°] = [-0.94 rad, +0.94 rad], if your trajectories don't fit this interval, you will likely have erratic movements, thus:
+* keep away from U-turns (~ 180° = 3.14 rad) for each motor when recording a trajectory
+* make sure your motors are not mounted backwards : `set_joint_value_target([0, 0, 0, 0, 0, 0])` must bring your robot in [that exact configuration](https://camo.githubusercontent.com/bda29f64b2e37ca0471eefff12f7981300e167c8/687474703a2f2f646f63732e706f7070792d70726f6a6563742e6f72672f656e2f617373656d626c792d6775696465732f6572676f2d6a722f696d672f6572676f5f746f6f6c732e676966).
+
+
 ## Compatible robots and accessories
 
 Although this ROS package can evolute as a ROS overlay to [`pypot`](https://github.com/poppy-project/pypot) and thus take control over all Poppy robots: Ergo jr, Torso, Humanoid... the current development status currently only supports Poppy Ergo Jr mounted with the Gripper tool. 
