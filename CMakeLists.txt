@@ -26,7 +26,7 @@ generate_messages(
 )
 
 generate_dynamic_reconfigure_options(
-  cfg/JointTrajectoryActionServer.cfg
+  config/JointTrajectoryActionServer.cfg
 )
 
 catkin_package(
