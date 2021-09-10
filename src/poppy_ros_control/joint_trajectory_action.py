@@ -48,35 +48,6 @@ from rospy import ROSException
 DEG_TO_RAD = 0.0174527
 
 
-def wait_for(test, timeout=1.0, raise_on_error=True, rate=100, timeout_msg="timeout expired", body=None):
-    """
-    Waits until some condition evaluates to true.
-    @param test: zero param function to be evaluated
-    @param timeout: max amount of time to wait. negative/inf for indefinitely
-    @param raise_on_error: raise or just return False
-    @param rate: the rate at which to check
-    @param timout_msg: message to supply to the timeout exception
-    @param body: optional function to execute while waiting
-    """
-    notimeout = (timeout < 0.0) or timeout == float("inf")
-    rate = rospy.Rate(rate)
-    while not test():
-        if rospy.is_shutdown():
-            if raise_on_error:
-                raise OSError(errno.ESHUTDOWN, "ROS Shutdown")
-            return False
-        elif not notimeout:
-            end_time = rospy.Time.now() + rospy.Time.from_sec(timeout)
-            if rospy.Time.now() >= end_time:
-                if raise_on_error:
-                    raise OSError(errno.ETIMEDOUT, timeout_msg)
-            return False
-        if callable(body):
-            body()
-        rate.sleep()
-    return True
-
-
 class JointTrajectoryActionServer(object):
     def __init__(self, reconfig_server, rate=100.0):
         self._dyn = reconfig_server
@@ -223,7 +194,8 @@ class JointTrajectoryActionServer(object):
         return zip(joint_names, error)
 
     def _update_feedback(self, cmd_point, jnt_names, cur_time):
-        self._fdbk.header.stamp = rospy.Duration(nsecs=rospy.Time.now().nsecs)
+        cur_time = rospy.Duration(cur_time)
+        self._fdbk.header.stamp = rospy.Time.now()
         self._fdbk.joint_names = jnt_names
         self._fdbk.desired = cmd_point
         self._fdbk.desired.time_from_start = cur_time
@@ -289,7 +261,7 @@ class JointTrajectoryActionServer(object):
 
     def _get_bezier_point(self, b_matrix, idx, t, cmd_time, dimensions_dict):
         pnt = JointTrajectoryPoint()
-        pnt.time_from_start = cmd_time
+        pnt.time_from_start = rospy.Duration(cmd_time)
         num_joints = b_matrix.shape[0]
         pnt.positions = [0.0] * num_joints
         if dimensions_dict['velocities']:
@@ -347,7 +319,7 @@ class JointTrajectoryActionServer(object):
                 trajectory_points[-1].accelerations = [0.0] * len(joint_names)
 
         # Compute Full Bezier Curve Coefficients for all 7 joints
-        pnt_times = [pnt.time_from_start for pnt in trajectory_points]
+        pnt_times = [pnt.time_from_start.to_sec() for pnt in trajectory_points]
         try:
             b_matrix = self._compute_bezier_coeff(joint_names, trajectory_points, dimensions_dict)
         except Exception as ex:
@@ -355,28 +327,17 @@ class JointTrajectoryActionServer(object):
             self._server.set_aborted()
             return
 
-        # Wait for the specified execution time, if not provided use now
-        start_seconds = goal.trajectory.header.stamp.to_sec()
-
-        start_time = rospy.Time(secs=start_seconds)
-
-
-
-        wait_for(
-            lambda: rospy.Time.now() >= start_time,
-            timeout=float('inf')
-        )
-
         # Loop until end of trajectory time.  Provide a single time step
         # of the control rate past the end to ensure we get to the end.
         # Keep track of current indices for spline segment generation
-        now_from_start = rospy.Duration(nsecs=rospy.Time.now().nsecs - start_time.nsecs)
+        
+        start_time = rospy.Time.now().to_sec()
+        now_from_start = 0
+        end_time = trajectory_points[-1].time_from_start.to_sec()
 
-        end_time = rospy.Duration(secs=trajectory_points[-1].time_from_start.to_sec())
-
-        while now_from_start.nsecs < end_time.nsecs and not rospy.is_shutdown():
+        while now_from_start < end_time and not rospy.is_shutdown():
             # Acquire Mutex
-            now = rospy.Time.now()
+            now = rospy.Time.now().to_sec()
             now_from_start = now - start_time
             idx = bisect.bisect(pnt_times, now_from_start)
             # Calculate percentage of time passed in this interval
@@ -384,7 +345,7 @@ class JointTrajectoryActionServer(object):
                 cmd_time = now_from_start - pnt_times[-1]
                 t = 1.0
             elif idx >= 0:
-                cmd_time = (now_from_start - pnt_times[idx-1])
+                cmd_time = now_from_start - pnt_times[idx-1]
                 t = cmd_time / max(0.001, pnt_times[idx] - pnt_times[idx-1])
             else:
                 cmd_time = 0
@@ -403,12 +364,12 @@ class JointTrajectoryActionServer(object):
         last = trajectory_points[-1]
         last_time = trajectory_points[-1].time_from_start.to_sec()
 
-        while now_from_start < rospy.Duration.from_sec(last_time + self._goal_time) and not rospy.is_shutdown():
+        while now_from_start < last_time + self._goal_time and not rospy.is_shutdown():
             if not self._command_joints(joint_names, last):
                 self._server.set_aborted(self._result)
                 rospy.logwarn("%s: Action Aborted" % (self._action_name,))
                 return
-            now_from_start = rospy.Time.now() - start_time
+            now_from_start = rospy.Time.now().to_sec() - start_time
             self._update_feedback(deepcopy(last), joint_names, now_from_start)
             control_rate.sleep()
 
