@@ -1,4 +1,4 @@
-# ROS Melodic controller for Poppy robots
+# ROS Noetic controller for Poppy robots
 ## Quickstart
 
 This software is distributed as a systme image for the Raspberry Pi so no setup is required except downloading the latest image file and flashing your SD card. 
