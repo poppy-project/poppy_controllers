@@ -1,6 +1,6 @@
 # Copyright (c) 2013-2015, Rethink Robotics
 # All rights reserved.
-# JTAS adapted by Yoan Mollard for e.DO robot, meeting the license hereunder
+# JTAS adapted by Yoan Mollard for Poppy robots, meeting the license hereunder
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -135,11 +135,27 @@ class JointTrajectoryActionServer(object):
         # Start services
         self._compliant_srv = rospy.Service('set_compliant', SetBool, self._cb_set_compliant)
         self._image_srv = rospy.Service('get_image', GetImage, self._cb_get_image)
-
+        self._gripper_service = rospy.Service('close_gripper', SetBool, self._cb_close_gripper)
         # Start the action server
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
         self._server.start()
 
+    def _cb_close_gripper(self, req):
+        # Only for Poppy Ergo Jr with the gripper end effector (motor m6)
+        msg="Gripper is going to {}".format("open" if req.data else "close")
+        success = True
+        target_open = min(90, rospy.get_param("gripper/angles/aperture", 90))   # Gripper aperture angle in degrees
+        target_close = max(0, rospy.get_param("gripper/angles/closure", 0))     # Gripper closure angle in degrees
+        speed = min(1, max(0.1, 3/rospy.get_param("gripper/speed", 0.5)))       # Gripper opening/closure speed from 0.1 to 1
+        rospy.set_param("gripper/angles/aperture", target_open)
+        rospy.set_param("gripper/angles/closure", target_close)
+        rospy.set_param("gripper/speed", speed)
+        try:
+            self._robot.m6.goto_position(target_open if req.data else target_close, speed, wait=False)
+        except AttributeError:
+            msg = "Gripper opening and closure only works with motor m6 of Poppy Ergo Jr but no such motor is available"
+            success = False
+        return SetBoolResponse(success=success, message=msg)
 
     def spin(self):
         while not rospy.is_shutdown():
@@ -357,11 +373,7 @@ class JointTrajectoryActionServer(object):
 
         # Wait for the specified execution time, if not provided use now
         start_seconds = goal.trajectory.header.stamp.to_sec()
-
         start_time = rospy.Time(secs=start_seconds)
-
-
-
         wait_for(
             lambda: rospy.Time.now() >= start_time,
             timeout=float('inf')
@@ -371,7 +383,6 @@ class JointTrajectoryActionServer(object):
         # of the control rate past the end to ensure we get to the end.
         # Keep track of current indices for spline segment generation
         now_from_start = rospy.Duration(nsecs=rospy.Time.now().nsecs - start_time.nsecs)
-
         end_time = rospy.Duration(secs=trajectory_points[-1].time_from_start.to_sec())
 
         while now_from_start.nsecs < end_time.nsecs and not rospy.is_shutdown():
