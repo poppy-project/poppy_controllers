@@ -113,7 +113,7 @@ class JointTrajectoryActionServer(object):
 
     def _cb_close_gripper(self, req):
         # Only for Poppy Ergo Jr with the gripper end effector (motor m6)
-        msg="Gripper is going to {}".format("open" if req.data else "close")
+        msg="Gripper is going to {}".format("open" if not req.data else "close")
         success = True
         target_open = min(60, rospy.get_param("gripper/angles/aperture", 30))     # Gripper aperture angle in degrees
         target_close = max(-45, rospy.get_param("gripper/angles/closure", -20))   # Gripper closure angle in degrees
