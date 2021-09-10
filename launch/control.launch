@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="gripper_aperture" default="90" />     <!--  Gripper aperture angle in degrees -->
-  <arg name="gripper_closure" default="0" />       <!--  Gripper closure angle in degrees -->
-  <arg name="gripper_speed" default="0.5" />       <!--  Gripper opening/closure speed from 0.1 to 1 -->
+  <arg name="gripper_aperture" default="30" />     <!--  Gripper aperture angle in degrees -->
+  <arg name="gripper_closure" default="-20" />     <!--  Gripper closure angle in degrees -->
+  <arg name="gripper_speed" default="0.2" />       <!--  Gripper opening/closure speed from 0.01 to 1 -->
 
 
   <param name="gripper_aperture" type="int" value="$(arg gripper_aperture)" /> 

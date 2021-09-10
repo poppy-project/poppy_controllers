@@ -144,14 +144,14 @@ class JointTrajectoryActionServer(object):
         # Only for Poppy Ergo Jr with the gripper end effector (motor m6)
         msg="Gripper is going to {}".format("open" if req.data else "close")
         success = True
-        target_open = min(90, rospy.get_param("gripper/angles/aperture", 90))   # Gripper aperture angle in degrees
-        target_close = max(0, rospy.get_param("gripper/angles/closure", 0))     # Gripper closure angle in degrees
-        speed = min(1, max(0.1, 3/rospy.get_param("gripper/speed", 0.5)))       # Gripper opening/closure speed from 0.1 to 1
+        target_open = min(60, rospy.get_param("gripper/angles/aperture", 30))     # Gripper aperture angle in degrees
+        target_close = max(-45, rospy.get_param("gripper/angles/closure", -20))   # Gripper closure angle in degrees
+        speed = 0.1/min(1, max(0.01, rospy.get_param("gripper/speed", 0.2)))      # Gripper opening/closure speed from 0.01 to 1
         rospy.set_param("gripper/angles/aperture", target_open)
         rospy.set_param("gripper/angles/closure", target_close)
         rospy.set_param("gripper/speed", speed)
         try:
-            self._robot.m6.goto_position(target_open if req.data else target_close, speed, wait=False)
+            self._robot.m6.goto_position(target_close if req.data else target_open, speed, wait=False)
         except AttributeError:
             msg = "Gripper opening and closure only works with motor m6 of Poppy Ergo Jr but no such motor is available"
             success = False
