@@ -23,6 +23,9 @@ This controller implements the regular robot interface for ROS + custom services
 * The action server `/follow_joint_trajectory` allows to control the robot by executing trajectories of type `trajectory_msgs/JointTrajectory`
 * The service `/set_compliant` allows to en(dis)able the robot compliance
 * The service `/get_image` allows to grab an image from the camera
+* The service `/close_gripper` allows to close or open the gripper (motor m6 of the Ergo Jr)
+* The parameters `/gripper/angles/aperture` and `/gripper/angles/closure` define the range of aperture of the gripper (in degrees from about -20° to +30°)
+* The parameter `/gripper/speed` defines the opening/closing speed from 0.05 (slowest) to 1 (fastest)
 
 ## Examples
 
@@ -43,7 +46,10 @@ rosrun rqt_plot rqt_plot /joint_states/position[0] /joint_states/position[1] /jo
 ```
 You'll see a graph updated in real time. Manually move motors with your hands to see their evolution in real time. 
 
-### 3. Trajectory record and playback feature
+### 3. Plan and execute trajectories with MoveIt
+Use this package with [poppy_ergo_jr_moveit_config](https://github.com/poppy-project/poppy_ergo_jr_moveit_config) in order to plan collision-free trajectories and execute them on the robot.
+
+### 4. Trajectory record and playback feature
 To record a trajectory, it is handy to enable compliance and manipulate the robot with your hands: 
 ```bash
 rosservice call /set_compliant "data: true" 
@@ -90,7 +96,7 @@ commander.go()
 commander.execute(my_motion)
 ```
 
-### 4. Grab an image
+### 5. Grab an image
 ```python
 import cv2
 from poppy_controllers.srv import GetImage
@@ -119,6 +125,6 @@ Is your robot compliance disabled? No trajectory can be executed with compliance
 
 ## Compatible robots and accessories
 
-Although this ROS package can evolute as a ROS overlay to [`pypot`](https://github.com/poppy-project/pypot) and thus take control over all Poppy robots: Ergo jr, Torso, Humanoid... the current development status currently only supports Poppy Ergo Jr mounted with the Gripper tool. 
+Although this ROS package can evolute as a ROS overlay to [`pypot`](https://github.com/poppy-project/pypot) and thus take control over all Poppy robots: Ergo jr, Torso, Humanoid... the current development status currently only supports Poppy Ergo Jr mounted with the Gripper or Lamp tools. 
 
 If you intend to control other Poppy robots, start by setting the right motors [here](https://github.com/poppy-project/poppy_controllers/blob/69e96dfa1774237e4ae770afbfbc23946c6b7a5f/cfg/JointTrajectoryActionServer.cfg#L65).
