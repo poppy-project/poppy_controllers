@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="gripper_aperture" default="30" />     <!--  Gripper aperture angle in degrees -->
+  <arg name="gripper_closure" default="-20" />     <!--  Gripper closure angle in degrees -->
+  <arg name="gripper_speed" default="0.2" />       <!--  Gripper opening/closure speed from 0.05 to 1 -->
+
+
+  <param name="gripper_aperture" type="int" value="$(arg gripper_aperture)" /> 
+  <param name="gripper_closure" type="int" value="$(arg gripper_closure)" />
+  <param name="gripper_speed" type="double" value="$(arg gripper_speed)" /> 
+
+  <node pkg="poppy_controllers" name="bringup" type="bringup.py" respawn="true" output="screen"/>
+</launch>
+
